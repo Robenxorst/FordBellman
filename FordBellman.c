@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+// Если не существует пути из одной вершины в другую, то расстояние между ними равно бесконечности
 #define INF 1000000
 
 void Ford_Bellman(int CountApex, int **SourceMatrix, int Start, int End)
@@ -8,49 +9,38 @@ void Ford_Bellman(int CountApex, int **SourceMatrix, int Start, int End)
     int *MinPath;//выходной массив с расстояниями до всех вершин
     int *MinWay;//выходной массив с траекторией движения
     int i, j, k, l;
-    int    count = 0;
 
-
+    // Если пути из одной вершины в другую не существует, то во входной матрице это указано, как -1;
+    for (i = 0; i < CountApex; i++)
+        for (j = 0; j < CountApex; j++)
+            if (SourceMatrix[i][j] == -1)
+                SourceMatrix[i][j] = INF;
+    
+    // Создание массива минимальных расстояний до всех вершин
     MinPath = (int *)malloc(CountApex * sizeof(int));
     if (MinPath == NULL)
     {
-        printf("Error MinPath");
+        printf("Error malloc for MinPath");
         return ;
     }
-
+    //Изначально минимальных путей до вершин не существует
     for (i = 0; i < CountApex; i++)
-        MinPath[i] = INF;//В начале минимальных путей до вершины не существует
+        MinPath[i] = INF;
+    //Минимальное расстояние от старта до него самого 0
+    MinPath[Start] = 0;
 
-    MinPath[Start] = 0;//Минимальное расстояние от старта до него самого 0
-
-    i = 0;// забиваем нужные элементы матрицы бесконечностями
-    while (i < CountApex)
-    {
-        j = 0;
-        while (j < CountApex)
-        {
-            if (SourceMatrix[i][j] == 999)
-                SourceMatrix[i][j] = INF;
-            j++;
-        }
-        i++;
-    }
-
-    //создание массива вершин предшественников
+    // Создание массива вершин предшественников
     MinChek = (int *)malloc (CountApex * sizeof(int));
     if (MinChek == NULL)
     {
-        printf("Error MinChek");
+        printf("Error malloc for MinChek");
         return ;
     }
-    i = 0;
-    while (i < CountApex)
-    {
-        //вначале забиваем массив невозможным значением вершин
+    //изначально в массиве невозможные значения
+    for (i = 0; i < CountApex; i++)
         MinChek[i] = -1;
-        i++;
-    }
 
+    // Основная часть алгоритма
     for (k = 0; k < CountApex; k++)
     {
         for (i = 0; i < CountApex; ++i)
@@ -66,31 +56,22 @@ void Ford_Bellman(int CountApex, int **SourceMatrix, int Start, int End)
             }
         }
     }
-    for (l = 0; l < CountApex; l++)//распечатка результата с кратчайшими путями
-                printf ("%d ", MinPath[l]);
-            printf("\n");
 
-    for (l = 0; l < CountApex; l++)//распечатка результата предшественников
-                printf ("%d ", MinChek[l]);
-            printf("\n");
-
-    //создание массива под траекторию робота
+    // Создание массива под траекторию робота
+    // Кол-во вершин в траектории не может быть больше CountApex:
     MinWay = (int *)malloc(sizeof(int) * CountApex);
     if (MinWay == NULL)
     {
         printf("Error MinWay");
         return ;
     }
-    i = 0;
-    while (i < CountApex)
-    {
-        //вначале забиваем массив невозможным значением вершин
+    // изначально массив содержит невозможные значениея
+    for (i = 0; i < CountApex; i++)
         MinWay[i] = -1;
-        i++;
-    }
 
+    // Восстанавливаем путь от конца до старта через массив предшественников
+    int u = End;
     i = 0;
-    int u = End;//отдельная переменная под конечные значения
     while (MinChek[u] != Start)
     {
         MinWay[i] = u;
@@ -102,41 +83,18 @@ void Ford_Bellman(int CountApex, int **SourceMatrix, int Start, int End)
         }
         i++;
     }
-    //вбиваем в массив последнее значение из массива предшественников
-    if (MinChek[u] == Start)
-    {
-        MinWay[i] = u;
-        i++;
-    }
-    //добавляем последнее значение
-    MinWay[i] = Start;
+    // добавляем последнее значение из массива предшественников
+    MinWay[i] = u;
+    // добавляем стартовое значение
+    MinWay[++i] = Start;
 
-    for (l = 0; l < CountApex; l++)//распечатка результата траектории
+    // распечатка траектории(делаем реверс, убираем оставшиеся -1)
+    for (l = i; l >= 0; l--)
                 printf ("%d ", MinWay[l]);
             printf("\n");
 
-    int *RezWay;//Массив траектории в удобном виде
-    int SizeWay = 0;//количество элементов итогового массива
-    while (MinWay[SizeWay] != -1)
-        SizeWay++;
-    RezWay = (int *)malloc(sizeof(int) * SizeWay);
-    if (RezWay == NULL)
-    {
-        printf("Error RezWay");
-        return ;
-    }
-    i = SizeWay - 1;
-    l = 0;
-    while (i >= 0)
-    {
-        RezWay[i] = MinWay[l];
-        i--;
-        l++;
-    }
-    for (l = 0; l != SizeWay; l++)//распечатка результата в удобном виде
-                printf ("%d ", RezWay[l]);
-            printf("\n");
-    printf ("%d\n", MinPath[End]);//распечатка значения кратчайшего пути
+    //распечатка длины траектории
+    printf ("%d\n", MinPath[End]);
 }
 
 int main()
@@ -145,39 +103,38 @@ int main()
     int end_apex;//конечная вершина
     int CountApex;//количество вершин в графе
     int **mputh;//входная матрица с весами ребер
-    int i, j = 0;
-    float start, end;
-    FILE *in;
-    char filename[20];
+    char filename[30];
 
-    //открытие нужного файла с входной матрицей
-    printf ("The name of file: ");
+    // открытие файла с входной матрицей
+    FILE *in;
+    printf ("The name of file: \n");
     scanf("%s", filename);
     in = fopen(filename, "r");
-
     if (!in)
-        printf("Error!");
+        printf("Can't open a file!\n");
     else
         printf("Read graf!\n");
 
-    //первый элемент файла указывает на количество вершин графа
+    // первый элемент файла указывает на количество вершин графа
     fscanf(in, "%d", &CountApex);
-    //выделяем необходимое место в памяти под матрицу
-    mputh = (int **)malloc(CountApex * sizeof(int *));//нулевой столбец указателей
-    for (int i = 0; i < CountApex; i++)//память под каждую строку матрицы
+    // выделяем необходимое место в памяти под матрицу
+    mputh = (int **)malloc(CountApex * sizeof(int *));
+    for (int i = 0; i < CountApex; i++)
         mputh[i] = (int *)malloc(CountApex * sizeof(int));
-    //заполняем созданную память матрицы значениями из файла
-    for (i = 0; i < CountApex; i++)
-    {
-        for (j = 0; j < CountApex; j++)
+    // заполняем созданную память матрицы значениями из файла
+    for (int i = 0; i < CountApex; i++)
+        for (int j = 0; j < CountApex; j++)
             fscanf(in, "%d", &mputh[i][j]);
-    }
-
     printf("Succsesfull reading\n");
-    printf("The start Apex is: ");
-    scanf("%d", &apex);//считываем начальную вершину
-    printf("The end Apex is: ");
-    scanf("%d", &end_apex);//считываем конечную вершину
+    
+    // считываем начальную вершину
+    printf("The start Apex is: \n");
+    scanf("%d", &apex);
+    // считываем конечную вершину
+    printf("The end Apex is: \n");
+    scanf("%d", &end_apex);
+    
     Ford_Bellman(CountApex, mputh, apex, end_apex);
+    
     return 0;
 }
